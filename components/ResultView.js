@@ -9,6 +9,8 @@ const METRICS = [
   { key: 'calories', label: 'Calories', unit: 'kcal', cls: 'c3' },
   { key: 'protein', label: 'Protein', unit: 'g', cls: 'c4' },
 ];
+// Fiber sits under the four main values as one slim block; it is part of the carbs total, not added to it.
+const ALL = [...METRICS, { key: 'fiber', label: 'Fiber (part of the carbs)', unit: 'g', cls: 'c5 wide' }];
 const MODE_LABEL = { serving: '1 serving', half: 'Half', all: 'All', more: 'More' };
 const LEVEL = { high: 3, medium: 2, low: 1 };
 const HINT = { high: 'Looks clear.', medium: 'Check the portion.', low: 'Missing data.' };
@@ -76,7 +78,7 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onAgain })
     if (g > 0) setEdits((e) => ({ ...e, [i.id]: { ...e[i.id], [key]: value / g } }));
   }
 
-  const totals = Object.fromEntries(METRICS.map(({ key }) => {
+  const totals = Object.fromEntries(ALL.map(({ key }) => {
     let sum = 0, nullG = 0, usda = 0, est = 0, you = 0;
     for (const i of active) {
       const g = (Number(grams[i.id]) || 0) * factor;
@@ -118,7 +120,7 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onAgain })
     const record = {
       id: Date.now(), savedAt: new Date().toISOString(), title: data.title, confidence: data.confidence, mode,
       items: active.map((i) => ({ name: i.name, grams: Math.round((Number(grams[i.id]) || 0) * factor) })),
-      totals: Object.fromEntries(METRICS.map(({ key }) => [key, totals[key].na ? null : Math.round(totals[key].value)])),
+      totals: Object.fromEntries(ALL.map(({ key }) => [key, totals[key].na ? null : Math.round(totals[key].value)])),
       verdict: r ? { word: r.word, level: r.lb } : null, limit: lim, aiEstimate, hasPhoto: false,
     };
     try {
@@ -192,14 +194,14 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onAgain })
       )}
 
       <div className="grid">
-        {METRICS.map((m) => {
+        {ALL.map((m) => {
           const t = totals[m.key];
           const v = fmt(m.key);
           return (
             <div key={m.key} className={`metric ${m.cls}`}>
               <small>{m.label}</small>
               {v == null ? <b className="na">Not available</b> : <b className={v.includes('–') ? 'rng' : ''}>{v}<span>{m.unit}</span></b>}
-              <em>{v == null ? 'Not enough data' : data.confidence === 'low' ? `Estimated range · ${t.source}` : `${t.source} · ${Math.round(totalG)} g portion`}</em>
+              <em>{v == null ? 'Not enough data' : data.confidence === 'low' ? `Estimated range · ${t.source}` : m.key === 'fiber' ? t.source : `${t.source} · ${Math.round(totalG)} g portion`}</em>
             </div>
           );
         })}
@@ -214,10 +216,12 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onAgain })
           const carbs = perG(i, 'carbs') == null ? null : perG(i, 'carbs') * g;
           const sugars = perG(i, 'sugars') == null ? null : perG(i, 'sugars') * g;
           const edited = !!edits[i.id];
+          // the size the model saw, shown only while the grams still match the photo (otherwise it would be wrong)
+          const measure = factor === 1 && Math.round(Number(grams[i.id])) === Math.round(i.grams) && i.portion_text ? i.portion_text : null;
           return (
             <div className="row" key={i.id}>
               <div className="rtop">
-                <span className="n">{i.name}<small className="src">{edited ? 'Edited by you' : i.usda_match ? `USDA: ${i.usda_match}` : 'Estimate'} · {kcal == null ? 'no calories' : `${kcal} kcal`}</small></span>
+                <span className="n">{i.name}{measure && <small className="meas">Looks like {measure}</small>}<small className="src">{edited ? 'Edited by you' : i.usda_match ? `USDA: ${i.usda_match}` : 'Estimate'} · {kcal == null ? 'no calories' : `${kcal} kcal`}</small></span>
                 <button className="x" type="button" aria-label={`Remove ${i.name}`} onClick={() => setRemoved({ ...removed, [i.id]: true })}><Icon d="M6 6l12 12M18 6L6 18" /></button>
               </div>
               <div className="fields">

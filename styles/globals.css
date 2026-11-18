@@ -1,7 +1,7 @@
 :root {
   --primary: #15803D; --on-primary: #fff; --secondary: #059669; --accent: #D97706;
   --bg: #F0FDF4; --card: #fff; --fg: #0F172A; --muted-fg: #475569; --muted: #F0F7F3; --border: #E2EFE7;
-  --tint-carbs: #FDEFD8; --tint-sugar: #E6ECF1; --tint-cal: #DDF1EC; --tint-prot: #E3F3E8;
+  --tint-carbs: #FDEFD8; --tint-sugar: #E6ECF1; --tint-cal: #DDF1EC; --tint-prot: #E3F3E8; --tint-fiber: #ECE8F6;
   --l0: #15803D; --l1: #7CC48D; --l2: #F0B04A; --l3: #B45309;
   --radius: 22px; --shadow: 0 6px 20px rgba(15, 23, 42, .07);
   --head: 'Figtree', system-ui, sans-serif; --body: 'Noto Sans', system-ui, sans-serif;
@@ -187,3 +187,14 @@ h1.title { font: 700 22px/1.2 var(--head); margin: 16px 0 6px; }
 .dv small { display: block; font-size: 11px; color: var(--muted-fg); margin-top: 2px; }
 .dish .note-line { margin: 0 0 8px; }
 .dsave { min-height: 44px; margin-top: 4px; }
+
+/* Fiber block and household measure */
+.c5 { background: var(--tint-fiber); }
+.metric.wide { grid-column: 1 / -1; min-height: 0; display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px; padding: 14px 16px; }
+.metric.wide small { grid-column: 1; }
+.metric.wide b { grid-column: 2; grid-row: 1 / 3; margin: 0; }
+.metric.wide b.na { font-size: 16px; margin: 0; }
+.metric.wide em { grid-column: 1; margin-top: 2px; }
+.meas { display: block; font-size: 13px; line-height: 1.3; color: var(--fg); margin-top: 3px; }
+.row .n { font-weight: 600; }
+.row .n small { font-weight: 400; }
