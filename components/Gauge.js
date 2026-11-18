@@ -23,8 +23,6 @@ export function rate(carbs, sugars, limit, range) {
   return { a, b, la, lb, word, lo, hi };
 }
 
-export const LEVEL_NAMES = NAMES;
-
 export default function Gauge({ carbs, sugars, limit, range, aiEstimate, onLimit }) {
   if (carbs == null) {
     return <div className="gauge"><div className="gcap">Blood-sugar check</div><p className="gwhy">Not enough carb data in this photo to rate it.</p></div>;

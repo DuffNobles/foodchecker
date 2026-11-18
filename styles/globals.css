@@ -22,7 +22,6 @@ h1 { font: 700 30px/1.15 var(--head); margin: 28px 0 6px; }
 .action .sub { font-size: 14px; color: var(--muted-fg); margin-top: 4px; }
 .action.meal { background: var(--tint-prot); }
 .action.menu { background: var(--tint-carbs); }
-.soon { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; background: #fff; font: 600 12px var(--body); color: var(--muted-fg); }
 
 .legal { font-size: 12.5px; line-height: 1.5; color: var(--muted-fg); text-align: center; margin-top: 28px; }
 
@@ -173,3 +172,18 @@ h1.title { font: 700 22px/1.2 var(--head); margin: 16px 0 6px; }
 .askdel { background: #FEF6E7; border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 10px; }
 .askdel p { font: 600 15px/1.3 var(--head); }
 .askdel .btn { margin-top: 0; }
+
+/* Menu scan */
+.seg.two { grid-template-columns: 1fr 1fr; margin-bottom: 12px; }
+.dish { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; margin-bottom: 12px; }
+.dtop { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.dname { min-width: 0; }
+.dname b { display: block; font: 700 16px/1.25 var(--head); }
+.dname small { display: block; font-size: 13px; line-height: 1.3; color: var(--muted-fg); margin-top: 2px; }
+.dtop .spill { flex: none; margin-top: 0; }
+.dvals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 12px 0 8px; }
+.dv { border-radius: 14px; padding: 8px 4px; text-align: center; }
+.dv b { display: block; font: 700 19px/1.15 var(--head); font-variant-numeric: tabular-nums; }
+.dv small { display: block; font-size: 11px; color: var(--muted-fg); margin-top: 2px; }
+.dish .note-line { margin: 0 0 8px; }
+.dsave { min-height: 44px; margin-top: 4px; }

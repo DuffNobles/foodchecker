@@ -23,10 +23,10 @@ export default function Home() {
           <div><b>Scan a meal</b><p className="sub">Photo of your plate</p></div>
         </Link>
 
-        <button className="action menu" type="button" aria-disabled="true">
+        <Link href="/menu" className="action menu">
           <span className="ico"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h12v18H6a2 2 0 01-2-2z"/><path d="M8 8h6M8 12h6"/></svg></span>
-          <div><b>Scan a menu</b><p className="sub">Photo of a menu</p><span className="soon">Coming soon</span></div>
-        </button>
+          <div><b>Scan a menu</b><p className="sub">Photo of a menu</p></div>
+        </Link>
 
         <Link href="/saved" className="action saved">
           <span className="ico"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z" /></svg></span>

@@ -30,13 +30,15 @@ function usePhoto(id, has) {
 function Card({ r, onOpen }) {
   const url = usePhoto(r.id, r.hasPhoto);
   const t = r.totals;
+  const conf = r.source === 'menu' ? 'medium' : r.confidence; // menu values are always single rough numbers
   return (
     <button type="button" className="scard" onClick={() => onOpen(r.id)}>
       <span className="sthumb">{url ? <img src={url} alt="" /> : <svg viewBox="0 0 24 24"><path d="M3 11h18" /><path d="M5 11a7 7 0 0014 0" /></svg>}</span>
       <span className="sbody">
         <b>{r.title}</b>
-        <small>{when(r.savedAt)}</small>
-        <small>{showValue(t.carbs, r.confidence)} g carbs · {showValue(t.sugars, r.confidence)} g sugars · {showValue(t.calories, r.confidence)} kcal · {showValue(t.protein, r.confidence)} g protein</small>
+        {r.subtitle && <small>{r.subtitle}</small>}
+        <small>{when(r.savedAt)}{r.source === 'menu' ? ' · Menu' : ''}</small>
+        <small>{showValue(t.carbs, conf)} g carbs · {showValue(t.sugars, conf)} g sugars · {showValue(t.calories, conf)} kcal · {showValue(t.protein, conf)} g protein</small>
         {r.verdict && <span className={`spill l${r.verdict.level}`}>{r.verdict.word}</span>}
       </span>
     </button>
@@ -46,6 +48,7 @@ function Card({ r, onOpen }) {
 function Detail({ r, onBack, onChange }) {
   const url = usePhoto(r.id, r.hasPhoto);
   const [confirm, setConfirm] = useState(false);
+  const menu = r.source === 'menu';
 
   async function dropPhoto() {
     try { await deletePhoto(r.id); } catch { /* nothing stored */ }
@@ -68,7 +71,8 @@ function Detail({ r, onBack, onChange }) {
       </div>
       {url && <div className="photo"><img src={url} alt={r.title} /></div>}
       <h1 className="title">{r.title}</h1>
-      <p className="note-line">Saved {when(r.savedAt)}. About {r.items.reduce((s, i) => s + i.grams, 0)} g in total{r.confidence === 'low' ? '. Low confidence, so values are ranges' : ''}.</p>
+      {r.subtitle && <p className="note-line">{r.subtitle}</p>}
+      <p className="note-line">Saved {when(r.savedAt)}. {menu ? `From a menu: a rough estimate for a typical serving${r.portionG ? ` of about ${r.portionG} g` : ''}` : `About ${r.items.reduce((s, i) => s + i.grams, 0)} g in total`}{!menu && r.confidence === 'low' ? '. Low confidence, so values are ranges' : ''}.</p>
       {r.verdict && (
         <div className="gauge">
           <div className="gcap">Blood-sugar check</div>
@@ -79,7 +83,7 @@ function Detail({ r, onBack, onChange }) {
       )}
       <div className="grid">
         {METRICS.map((m) => {
-          const v = showValue(r.totals[m.key], r.confidence);
+          const v = showValue(r.totals[m.key], menu ? 'medium' : r.confidence);
           const na = r.totals[m.key] == null;
           return (
             <div key={m.key} className={`metric ${m.cls}`}>
@@ -89,10 +93,12 @@ function Detail({ r, onBack, onChange }) {
           );
         })}
       </div>
-      <div className="card">
-        <h3>What was in it</h3>
-        {r.items.map((i, n) => <div className="row" key={n}><span className="n">{i.name}<small className="src">{i.grams} g</small></span></div>)}
-      </div>
+      {!menu && (
+        <div className="card">
+          <h3>What was in it</h3>
+          {r.items.map((i, n) => <div className="row" key={n}><span className="n">{i.name}<small className="src">{i.grams} g</small></span></div>)}
+        </div>
+      )}
       <div className="actions">
         {r.hasPhoto && <button className="btn s" type="button" onClick={dropPhoto}>Delete the photo, keep the result</button>}
         {!confirm
