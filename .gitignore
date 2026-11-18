@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+!.env.example
+risk-test/images/
+risk-test/results/
+.next/
+design/assets/
+design/references/
