@@ -11,8 +11,11 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </Head>
       <main className="wrap">
-        <h1>What are you eating?</h1>
-        <p className="lead">Take a photo to see the carbs, sugars, calories and protein.</p>
+        <section className="hero">
+          <span className="kicker"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/></svg>Food Checker</span>
+          <h1>What are you <em>eating?</em></h1>
+          <p className="lead">Take a photo to see the carbs, sugars, calories and protein.</p>
+        </section>
 
         <button className="action meal" type="button" aria-disabled="true">
           <span className="ico"><svg viewBox="0 0 24 24"><path d="M3 11h18"/><path d="M5 11a7 7 0 0014 0"/><path d="M8 7c0-1.2.8-1.5.8-2.5M12 7c0-1.2.8-1.5.8-2.5M16 7c0-1.2.8-1.5.8-2.5"/></svg></span>
