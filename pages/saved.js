@@ -1,0 +1,148 @@
+import Head from 'next/head';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { requireAccess } from '../lib/session';
+import { getSaved, removeSaved, updateSaved, getPhoto, deletePhoto, showValue } from '../lib/store';
+
+export const getServerSideProps = requireAccess;
+
+const METRICS = [
+  { key: 'carbs', label: 'Total carbohydrates', unit: 'g', cls: 'c1' },
+  { key: 'sugars', label: 'Total sugars', unit: 'g', cls: 'c2' },
+  { key: 'calories', label: 'Calories', unit: 'kcal', cls: 'c3' },
+  { key: 'protein', label: 'Protein', unit: 'g', cls: 'c4' },
+];
+
+const when = (iso) => new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+
+// Photo from the phone's own storage, shown through a temporary local address.
+function usePhoto(id, has) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    if (!has) { setUrl(null); return undefined; }
+    let made = null, live = true;
+    getPhoto(id).then((blob) => { if (live && blob) { made = URL.createObjectURL(blob); setUrl(made); } }).catch(() => {});
+    return () => { live = false; if (made) URL.revokeObjectURL(made); };
+  }, [id, has]);
+  return url;
+}
+
+function Card({ r, onOpen }) {
+  const url = usePhoto(r.id, r.hasPhoto);
+  const t = r.totals;
+  return (
+    <button type="button" className="scard" onClick={() => onOpen(r.id)}>
+      <span className="sthumb">{url ? <img src={url} alt="" /> : <svg viewBox="0 0 24 24"><path d="M3 11h18" /><path d="M5 11a7 7 0 0014 0" /></svg>}</span>
+      <span className="sbody">
+        <b>{r.title}</b>
+        <small>{when(r.savedAt)}</small>
+        <small>{showValue(t.carbs, r.confidence)} g carbs · {showValue(t.sugars, r.confidence)} g sugars · {showValue(t.calories, r.confidence)} kcal · {showValue(t.protein, r.confidence)} g protein</small>
+        {r.verdict && <span className={`spill l${r.verdict.level}`}>{r.verdict.word}</span>}
+      </span>
+    </button>
+  );
+}
+
+function Detail({ r, onBack, onChange }) {
+  const url = usePhoto(r.id, r.hasPhoto);
+  const [confirm, setConfirm] = useState(false);
+
+  async function dropPhoto() {
+    try { await deletePhoto(r.id); } catch { /* nothing stored */ }
+    updateSaved(r.id, { hasPhoto: false });
+    onChange();
+  }
+  async function dropResult() {
+    try { await deletePhoto(r.id); } catch { /* nothing stored */ }
+    removeSaved(r.id);
+    onBack();
+    onChange();
+  }
+
+  return (
+    <>
+      <div className="bar">
+        <button type="button" className="round" aria-label="Back to saved results" onClick={onBack}><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg></button>
+        <h2>Saved result</h2>
+        <span className="round ghost" />
+      </div>
+      {url && <div className="photo"><img src={url} alt={r.title} /></div>}
+      <h1 className="title">{r.title}</h1>
+      <p className="note-line">Saved {when(r.savedAt)}. About {r.items.reduce((s, i) => s + i.grams, 0)} g in total{r.confidence === 'low' ? '. Low confidence, so values are ranges' : ''}.</p>
+      {r.verdict && (
+        <div className="gauge">
+          <div className="gcap">Blood-sugar check</div>
+          <div className={`gverdict l${r.verdict.level}`}>{r.verdict.word}</div>
+          <div className="gbasis">Rated against a limit of {r.limit} g carbs per meal on the day it was saved. Based on carbs and sugars only. Not medical advice.</div>
+          {r.aiEstimate && <div className="gbasis">Some numbers were AI estimates.</div>}
+        </div>
+      )}
+      <div className="grid">
+        {METRICS.map((m) => {
+          const v = showValue(r.totals[m.key], r.confidence);
+          const na = r.totals[m.key] == null;
+          return (
+            <div key={m.key} className={`metric ${m.cls}`}>
+              <small>{m.label}</small>
+              {na ? <b className="na">Not available</b> : <b className={v.includes('–') ? 'rng' : ''}>{v}<span>{m.unit}</span></b>}
+            </div>
+          );
+        })}
+      </div>
+      <div className="card">
+        <h3>What was in it</h3>
+        {r.items.map((i, n) => <div className="row" key={n}><span className="n">{i.name}<small className="src">{i.grams} g</small></span></div>)}
+      </div>
+      <div className="actions">
+        {r.hasPhoto && <button className="btn s" type="button" onClick={dropPhoto}>Delete the photo, keep the result</button>}
+        {!confirm
+          ? <button className="btn s danger" type="button" onClick={() => setConfirm(true)}>Delete this result</button>
+          : (
+            <div className="askdel" role="alertdialog" aria-label="Delete this result?">
+              <p>Delete this result{r.hasPhoto ? ' and its photo' : ''}? This cannot be undone.</p>
+              <button className="btn danger solid" type="button" onClick={dropResult}>Yes, delete</button>
+              <button className="btn s" type="button" onClick={() => setConfirm(false)}>Keep it</button>
+            </div>
+          )}
+      </div>
+      <p className="legal">This is an estimate. It is not medical advice and does not replace your care team.<br /><b>Source:</b> USDA FoodData Central where marked.</p>
+    </>
+  );
+}
+
+export default function Saved() {
+  const [list, setList] = useState(null);
+  const [open, setOpen] = useState(null);
+  const refresh = () => setList(getSaved());
+  useEffect(refresh, []);
+
+  const current = list && open != null ? list.find((r) => r.id === open) : null;
+
+  return (
+    <>
+      <Head>
+        <title>Saved results · Food Checker</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+      </Head>
+      <main className="wrap">
+        {current ? <Detail r={current} onBack={() => setOpen(null)} onChange={refresh} /> : (
+          <>
+            <div className="bar">
+              <Link href="/" className="round" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg></Link>
+              <h2>Saved results</h2>
+              <span className="round ghost" />
+            </div>
+            {list && list.length === 0 && (
+              <>
+                <p className="lead center">Nothing saved yet.</p>
+                <Link href="/scan" className="btn p linkbtn">Scan a meal</Link>
+              </>
+            )}
+            {list && list.map((r) => <Card key={r.id} r={r} onOpen={setOpen} />)}
+            {list && list.length > 0 && <p className="legal">Saved on this phone only. Clearing Safari's website data removes them.</p>}
+          </>
+        )}
+      </main>
+    </>
+  );
+}

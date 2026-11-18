@@ -11,17 +11,25 @@ export function position(carbs, sugars, limit) {
 }
 const level = (p) => Math.min(3, Math.floor(p / 0.25));
 
-export default function Gauge({ carbs, sugars, limit, range, onLimit }) {
-  if (carbs == null) {
-    return <div className="gauge"><div className="gcap">Blood-sugar check</div><p className="gwhy">Not enough carb data in this photo to rate it.</p></div>;
-  }
-  const lo = range ? range[0] : carbs;
-  const hi = range ? range[1] : carbs;
+// The rating for a portion. `range` is true for low confidence (carbs and sugars shown as a range).
+export function rate(carbs, sugars, limit, range) {
+  const lo = range ? carbs * 0.65 : carbs;
+  const hi = range ? carbs * 1.35 : carbs;
   const sLo = sugars == null ? null : range ? sugars * 0.65 : sugars;
   const sHi = sugars == null ? null : range ? sugars * 1.35 : sugars;
   const a = position(lo, sLo, limit), b = position(hi, sHi, limit);
   const la = level(a.p), lb = level(b.p);
   const word = la === lb ? NAMES[la] : `${NAMES[la]} to ${NAMES[lb]}`;
+  return { a, b, la, lb, word, lo, hi };
+}
+
+export const LEVEL_NAMES = NAMES;
+
+export default function Gauge({ carbs, sugars, limit, range, aiEstimate, onLimit }) {
+  if (carbs == null) {
+    return <div className="gauge"><div className="gcap">Blood-sugar check</div><p className="gwhy">Not enough carb data in this photo to rate it.</p></div>;
+  }
+  const { a, b, la, lb, word, lo, hi } = rate(carbs, sugars, limit, range);
   const spread = b.p - a.p > 0.02;
   const left = (p) => `calc(6px + (100% - 12px) * ${p.toFixed(3)})`;
   const carbText = range ? `${Math.round(lo)}–${Math.round(hi)} g carbs` : `${Math.round(carbs)} g carbs`;
@@ -45,6 +53,7 @@ export default function Gauge({ carbs, sugars, limit, range, onLimit }) {
         <input type="number" inputMode="decimal" min="10" max="200" value={limit} onChange={(e) => onLimit(e.target.value)} aria-label="Carb limit per meal in grams" /> g
       </label>
       {(a.moved || b.moved) && <div className="gbasis">Sugars over 25 g move this one step worse.</div>}
+      {aiEstimate && <div className="gbasis">Some numbers are AI estimates. Check them.</div>}
       <div className="gbasis">Based on carbs and sugars only. Set the limit with your care team. Not medical advice.</div>
     </div>
   );

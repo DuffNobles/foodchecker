@@ -28,6 +28,11 @@ export default function Home() {
           <div><b>Scan a menu</b><p className="sub">Photo of a menu</p><span className="soon">Coming soon</span></div>
         </button>
 
+        <Link href="/saved" className="action saved">
+          <span className="ico"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z" /></svg></span>
+          <div><b>Saved results</b><p className="sub">Meals you kept</p></div>
+        </Link>
+
         <p className="legal">Results are estimates, not medical advice. They do not replace your care team.</p>
       </main>
     </>

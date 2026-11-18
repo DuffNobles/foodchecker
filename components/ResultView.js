@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import Gauge from './Gauge';
+import Link from 'next/link';
+import Gauge, { rate } from './Gauge';
+import { addSaved, updateSaved, savePhoto, thumbnail, keepStorage } from '../lib/store';
 
 const METRICS = [
   { key: 'carbs', label: 'Total carbohydrates', unit: 'g', cls: 'c1' },
@@ -29,7 +31,7 @@ function NumField({ short, label, value, onCommit }) {
   );
 }
 
-export default function ResultView({ data, photoUrl, carry, onRescan, onSave, onAgain }) {
+export default function ResultView({ data, photoUrl, carry, onRescan, onAgain }) {
   const [grams, setGrams] = useState(() => Object.fromEntries(data.items.map((i) => [i.id, i.grams])));
   const [removed, setRemoved] = useState({});
   // typed carbs/sugars per food, kept as grams-per-gram so they follow the portion; a re-scan carries them over by food name
@@ -50,6 +52,8 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onSave, on
   const [showOther, setShowOther] = useState(false);
   const [saved, setSaved] = useState(false);
   const [limit, setLimit] = useState(45);
+  const [withPhoto, setWithPhoto] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   useEffect(() => {
     try { const v = Number(localStorage.getItem('fc_limit')); if (v >= 10 && v <= 200) setLimit(v); } catch { /* default */ }
@@ -86,6 +90,9 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onSave, on
     return [key, { value: sum, na, source }];
   }));
 
+  // any food whose carbs or sugars come from the model's own guess (not USDA, not typed by you)
+  const aiEstimate = active.some((i) => ['carbs', 'sugars'].some((k) => perG(i, k) != null && !edits[i.id]?.[k] && !i.from_usda[k]));
+
   function fmt(key) {
     const t = totals[key];
     if (t.na) return null;
@@ -103,20 +110,32 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onSave, on
     onRescan(hint, kept);
   }
 
-  function save() {
+  async function save() {
+    const lim = Number(limit) >= 10 ? Number(limit) : 45;
+    const carbsKnown = !totals.carbs.na;
+    // the verdict is kept as it was on the day, so changing the limit later does not rewrite old results
+    const r = carbsKnown ? rate(totals.carbs.value, totals.sugars.na ? null : totals.sugars.value, lim, data.confidence === 'low') : null;
     const record = {
       id: Date.now(), savedAt: new Date().toISOString(), title: data.title, confidence: data.confidence, mode,
       items: active.map((i) => ({ name: i.name, grams: Math.round((Number(grams[i.id]) || 0) * factor) })),
       totals: Object.fromEntries(METRICS.map(({ key }) => [key, totals[key].na ? null : Math.round(totals[key].value)])),
+      verdict: r ? { word: r.word, level: r.lb } : null, limit: lim, aiEstimate, hasPhoto: false,
     };
     try {
-      const list = JSON.parse(localStorage.getItem('fc_saved') || '[]');
-      list.unshift(record);
-      localStorage.setItem('fc_saved', JSON.stringify(list));
-      setSaved(true);
-      if (onSave) onSave(record);
+      addSaved(record);
     } catch {
       alert('This phone would not let the app save. Check that private browsing is off.');
+      return;
+    }
+    setSaved(true);
+    keepStorage();
+    if (withPhoto) {
+      try {
+        await savePhoto(record.id, await thumbnail(photoUrl));
+        updateSaved(record.id, { hasPhoto: true });
+      } catch {
+        setPhotoFailed(true);
+      }
     }
   }
 
@@ -150,7 +169,8 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onSave, on
         carbs={totals.carbs.na ? null : totals.carbs.value}
         sugars={totals.sugars.na ? null : totals.sugars.value}
         limit={Number(limit) >= 10 ? Number(limit) : 45}
-        range={data.confidence === 'low' && !totals.carbs.na ? [totals.carbs.value * 0.65, totals.carbs.value * 1.35] : null}
+        range={data.confidence === 'low'}
+        aiEstimate={aiEstimate}
         onLimit={changeLimit}
       />
       {data.note && <p className="note-line">{data.note}</p>}
@@ -218,7 +238,15 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onSave, on
       </div>
 
       <div className="actions">
+        {!saved && (
+          <label className="keepphoto">
+            <input type="checkbox" checked={withPhoto} onChange={(e) => setWithPhoto(e.target.checked)} />
+            <span>Save the photo too<small>Stays on this phone. You can delete it later and keep the result.</small></span>
+          </label>
+        )}
         <button className="btn p" type="button" onClick={save} disabled={saved}>{saved ? 'Saved on this device' : 'Save result'}</button>
+        {saved && <Link href="/saved" className="btn s linkbtn">Open saved results</Link>}
+        {photoFailed && <p className="err" role="alert">The result is saved, but the photo could not be.</p>}
         <button className="btn s" type="button" onClick={onAgain}>Scan something else</button>
       </div>
       <p className="legal">This is an estimate made from your photo. It is not medical advice and does not replace your care team.<br /><b>Source:</b> USDA FoodData Central where marked.</p>
