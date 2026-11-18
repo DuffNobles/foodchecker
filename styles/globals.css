@@ -56,11 +56,8 @@ a.action { text-decoration: none; }
 .round { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--card); box-shadow: var(--shadow); display: grid; place-items: center; color: var(--fg); cursor: pointer; text-decoration: none; }
 .round.ghost { background: none; box-shadow: none; }
 h1.title { font: 700 22px/1.2 var(--head); margin: 16px 0 6px; }
-h1.title.big { font-size: 30px; margin-top: 22px; }
 .lead.center { text-align: center; margin-top: 14px; }
 .file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.btn.pick { display: flex; align-items: center; justify-content: center; margin-top: 4px; }
-.tips { margin: 22px 0 0; padding: 0 0 0 20px; color: var(--muted-fg); font-size: 15px; line-height: 1.6; }
 .photo { position: relative; border-radius: var(--radius); overflow: hidden; height: 200px; background: var(--muted); }
 .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .badge { position: absolute; left: 12px; bottom: 12px; background: rgba(255,255,255,.92); border-radius: 999px; padding: 6px 12px; font: 600 12px var(--body); color: var(--muted-fg); }
@@ -138,3 +135,20 @@ h1.title.big { font-size: 30px; margin-top: 22px; }
 .nf input { width: 100%; min-width: 0; box-sizing: border-box; min-height: 40px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--muted); text-align: right; padding: 0 8px; font: 600 15px var(--body); color: var(--fg); }
 .nf input:focus-visible { outline: 3px solid var(--secondary); outline-offset: 1px; }
 .recheck { margin-top: 10px; }
+
+/* Scan screen */
+.scanhero { padding: 26px 24px 28px; }
+.lens { position: relative; width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--primary); box-shadow: 0 0 0 10px rgba(255, 255, 255, .55), 0 0 0 22px rgba(255, 255, 255, .28); margin: 14px 0 34px 14px; }
+.lens svg { width: 34px; height: 34px; }
+.scanhero h1 { font: 700 clamp(30px, 9vw, 38px)/1.08 var(--head); letter-spacing: -0.02em; margin: 0 0 12px; }
+.action.snap { background: var(--primary); color: var(--on-primary); animation-delay: .08s; }
+.action.snap .ico { background: rgba(255, 255, 255, .2); color: var(--on-primary); }
+.action.snap .sub { color: rgba(255, 255, 255, .85); }
+.action.snap:focus-within { outline: 3px solid var(--secondary); outline-offset: 3px; }
+.tipcards { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.tipcards li { display: flex; align-items: center; gap: 14px; background: var(--card); border-radius: 20px; padding: 12px 16px 12px 12px; box-shadow: var(--shadow); font-size: 14.5px; line-height: 1.35; color: var(--fg); animation: rise .5s ease both; }
+.tipcards .t1 { animation-delay: .16s; } .tipcards .t2 { animation-delay: .22s; } .tipcards .t3 { animation-delay: .28s; }
+.ti { flex: none; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; color: var(--primary); }
+.ti svg { width: 24px; height: 24px; }
+.t1 .ti { background: var(--tint-prot); } .t2 .ti { background: var(--tint-carbs); } .t3 .ti { background: var(--tint-cal); }
+@media (prefers-reduced-motion: reduce) { .tipcards li { animation: none; } }
