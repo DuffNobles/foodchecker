@@ -92,16 +92,12 @@ h1.title.big { font-size: 30px; margin-top: 22px; }
 .c4 { background: var(--tint-prot); }
 .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 6px 16px 10px; margin-top: 14px; }
 .card h3 { font: 600 15px var(--head); padding: 10px 0 4px; }
-.row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px dashed var(--border); font-size: 14px; min-height: 52px; }
+.row { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 8px 0; border-top: 1px dashed var(--border); font-size: 14px; min-height: 52px; }
 .row:first-of-type { border-top: 0; }
 .row .n { flex: 1; line-height: 1.25; }
 .src { display: block; font-size: 11.5px; color: var(--muted-fg); margin-top: 2px; }
-.g-edit { display: flex; align-items: center; gap: 4px; color: var(--muted-fg); }
-.g-edit input { width: 68px; min-height: 40px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--muted); text-align: right; padding: 0 8px; font: 600 15px var(--body); color: var(--fg); }
-.g-edit input:focus-visible { outline: 3px solid var(--secondary); outline-offset: 1px; }
 .x { width: 40px; height: 40px; border: 0; background: none; color: var(--muted-fg); border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
 .x svg { width: 18px; height: 18px; }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .ask { background: #FEF6E7; border-radius: var(--radius); padding: 14px 16px; margin: 4px 0 14px; }
 .ask p { font: 600 15px/1.3 var(--head); margin-bottom: 10px; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -134,3 +130,11 @@ h1.title.big { font-size: 30px; margin-top: 22px; }
 .glimit input { width: 64px; min-height: 36px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--muted); text-align: center; font: 600 14px var(--body); color: var(--fg); }
 .glimit input:focus-visible { outline: 3px solid var(--secondary); outline-offset: 1px; }
 .gbasis { font-size: 11.5px; line-height: 1.4; color: var(--muted-fg); margin-top: 4px; }
+
+/* Per-food edit fields */
+.rtop { display: flex; align-items: center; gap: 10px; }
+.fields { display: flex; gap: 8px; }
+.nf { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 11.5px; color: var(--muted-fg); }
+.nf input { width: 100%; min-width: 0; box-sizing: border-box; min-height: 40px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--muted); text-align: right; padding: 0 8px; font: 600 15px var(--body); color: var(--fg); }
+.nf input:focus-visible { outline: 3px solid var(--secondary); outline-offset: 1px; }
+.recheck { margin-top: 10px; }

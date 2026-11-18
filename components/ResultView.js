@@ -15,9 +15,24 @@ function Icon({ d, extra }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} />{extra}</svg>;
 }
 
+// Number box that keeps what is being typed, and only reports valid numbers.
+function NumField({ short, label, value, onCommit }) {
+  const shown = value == null ? '' : String(Math.round(value * 10) / 10);
+  const [text, setText] = useState(shown);
+  const [focus, setFocus] = useState(false);
+  useEffect(() => { if (!focus) setText(shown); }, [shown, focus]);
+  return (
+    <label className="nf"><span>{short}</span>
+      <input aria-label={label} type="number" inputMode="decimal" min="0" value={text} onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
+        onChange={(e) => { setText(e.target.value); const v = Number(e.target.value); if (e.target.value !== '' && v >= 0) onCommit(v); }} />
+    </label>
+  );
+}
+
 export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }) {
   const [grams, setGrams] = useState(() => Object.fromEntries(data.items.map((i) => [i.id, i.grams])));
   const [removed, setRemoved] = useState({});
+  const [edits, setEdits] = useState({}); // typed carbs/sugars per food, kept as grams-per-gram so they follow the portion
   const prep = data.scope === 'prep' && data.servings >= 2;
   const MODES = prep ? { serving: 1 / data.servings, half: 0.5, all: 1 } : { half: 0.5, all: 1, more: 1.5 };
   const [mode, setMode] = useState(prep ? 'serving' : 'all');
@@ -41,17 +56,24 @@ export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }
   const active = data.items.filter((i) => !removed[i.id]);
   const totalG = active.reduce((s, i) => s + (Number(grams[i.id]) || 0) * factor, 0);
 
+  const perG = (i, key) => edits[i.id]?.[key] ?? i.per_g[key];
+
+  function setValue(i, key, value) {
+    const g = (Number(grams[i.id]) || 0) * factor;
+    if (g > 0) setEdits((e) => ({ ...e, [i.id]: { ...e[i.id], [key]: value / g } }));
+  }
+
   const totals = Object.fromEntries(METRICS.map(({ key }) => {
-    let sum = 0, nullG = 0, usda = 0, est = 0;
+    let sum = 0, nullG = 0, usda = 0, est = 0, you = 0;
     for (const i of active) {
       const g = (Number(grams[i.id]) || 0) * factor;
-      const v = i.per_g[key];
+      const v = perG(i, key);
       if (v == null) { nullG += g; continue; }
       sum += v * g;
-      if (i.from_usda[key]) usda += 1; else est += 1;
+      if (edits[i.id]?.[key] != null) you += 1; else if (i.from_usda[key]) usda += 1; else est += 1;
     }
     const na = totalG <= 0 || nullG / totalG > 0.3;
-    const source = usda && est ? 'USDA + estimate' : est ? 'Estimate' : 'USDA';
+    const source = [usda && 'USDA', est && 'Estimate', you && 'Your value'].filter(Boolean).join(' + ') || 'USDA';
     return [key, { value: sum, na, source }];
   }));
 
@@ -149,19 +171,31 @@ export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }
         {data.items.map((i) => {
           if (removed[i.id]) return null;
           const g = (Number(grams[i.id]) || 0) * factor;
-          const kcal = i.per_g.calories == null ? null : Math.round(i.per_g.calories * g);
-          const carbs = i.per_g.carbs == null ? null : Math.round(i.per_g.carbs * g);
+          const kcal = perG(i, 'calories') == null ? null : Math.round(perG(i, 'calories') * g);
+          const carbs = perG(i, 'carbs') == null ? null : perG(i, 'carbs') * g;
+          const sugars = perG(i, 'sugars') == null ? null : perG(i, 'sugars') * g;
+          const edited = !!edits[i.id];
           return (
             <div className="row" key={i.id}>
-              <span className="n">{i.name}<small className="src">{i.usda_match ? 'USDA' : 'Estimate'} · {kcal == null ? 'no calories' : `${kcal} kcal`} · {carbs == null ? 'no carbs' : `${carbs} g carbs`}</small></span>
-              <label className="g-edit"><span className="sr">Grams of {i.name}</span>
-                <input type="number" inputMode="decimal" min="0" value={Math.round(g * 10) / 10} onChange={(e) => setGrams({ ...grams, [i.id]: e.target.value === '' ? '' : Number(e.target.value) / factor })} /> g
-              </label>
-              <button className="x" type="button" aria-label={`Remove ${i.name}`} onClick={() => setRemoved({ ...removed, [i.id]: true })}><Icon d="M6 6l12 12M18 6L6 18" /></button>
+              <div className="rtop">
+                <span className="n">{i.name}<small className="src">{edited ? 'Edited by you' : i.usda_match ? `USDA: ${i.usda_match}` : 'Estimate'} · {kcal == null ? 'no calories' : `${kcal} kcal`}</small></span>
+                <button className="x" type="button" aria-label={`Remove ${i.name}`} onClick={() => setRemoved({ ...removed, [i.id]: true })}><Icon d="M6 6l12 12M18 6L6 18" /></button>
+              </div>
+              <div className="fields">
+                <NumField short="Grams" label={`Grams of ${i.name}`} value={g} onCommit={(v) => setGrams({ ...grams, [i.id]: v / factor })} />
+                <NumField short="Carbs (g)" label={`Carbs in ${i.name}, g`} value={carbs} onCommit={(v) => setValue(i, 'carbs', v)} />
+                <NumField short="Sugars (g)" label={`Sugars in ${i.name}, g`} value={sugars} onCommit={(v) => setValue(i, 'sugars', v)} />
+              </div>
             </div>
           );
         })}
-        {Object.keys(removed).length > 0 && <button className="link" type="button" onClick={() => setRemoved({})}>Put removed items back</button>}
+        {Object.keys(removed).length > 0 && (
+          <>
+            <button className="link" type="button" onClick={() => setRemoved({})}>Put removed items back</button>
+            <button className="btn s recheck" type="button" onClick={() => onRescan(`Only these foods are on the plate: ${active.map((i) => i.name).join(', ')}. Ignore anything else.`)}>Check the photo again with this list</button>
+            <p className="note-line">Reads the photo again. Values you typed are cleared.</p>
+          </>
+        )}
       </div>
 
       <div className="actions">

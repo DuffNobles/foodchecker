@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meal rating gauge: design options</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary:#15803D; --secondary:#059669; --accent:#D97706; --bg:#F0FDF4; --card:#fff; --fg:#0F172A; --muted-fg:#475569; --border:#E2EFE7;
+  --l0:#15803D; --l1:#7CC48D; --l2:#F0B04A; --l3:#B45309;      /* deep green, light green, amber, burnt amber (no red) */
+  --shadow:0 6px 20px rgba(15,23,42,.07); --head:'Figtree',system-ui,sans-serif; --body:'Noto Sans',system-ui,sans-serif;
+}
+* { box-sizing:border-box; margin:0; }
+body { background:#E5EBE7; color:var(--fg); font-family:var(--body); padding:24px 16px 48px; }
+h1 { font:700 22px var(--head); text-align:center; margin-bottom:4px; }
+.sub { text-align:center; color:var(--muted-fg); font-size:14px; margin-bottom:22px; }
+h2 { font:600 16px var(--head); margin:26px 0 12px; text-align:center; }
+.row { display:flex; flex-wrap:wrap; gap:18px; justify-content:center; }
+.card { width:360px; background:var(--bg); border-radius:28px; padding:18px; box-shadow:var(--shadow); }
+.t { font:700 18px/1.2 var(--head); }
+.p { font-size:13px; color:var(--muted-fg); margin:4px 0 12px; }
+.panel { background:var(--card); border-radius:22px; padding:14px 14px 16px; box-shadow:var(--shadow); text-align:center; }
+.verdict { font:700 26px/1.1 var(--head); }
+.why { font-size:12.5px; color:var(--muted-fg); margin-top:6px; line-height:1.4; }
+.basis { font-size:11.5px; color:var(--muted-fg); margin-top:4px; }
+.l0 { color:var(--l0); } .l1 { color:#3F8F57; } .l2 { color:#9A5B06; } .l3 { color:var(--l3); }
+.cap { font:600 12px var(--head); text-align:center; color:var(--muted-fg); margin-bottom:8px; }
+svg { display:block; margin:0 auto; overflow:visible; }
+.dial { position:relative; width:300px; height:215px; margin:6px auto 0; }
+.center { position:absolute; left:0; right:0; top:70px; text-align:center; }
+.center b { display:block; font:700 44px/1 var(--head); letter-spacing:-.02em; }
+.center span { font-size:14px; color:var(--muted-fg); }
+.legend { display:flex; flex-wrap:wrap; gap:4px 12px; justify-content:center; margin:10px 0 4px; font-size:11.5px; color:var(--muted-fg); }
+.legend i { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; }
+.bar { position:relative; height:16px; display:flex; gap:4px; margin:34px 6px 8px; }
+.bar i { flex:1; border-radius:8px; }
+.mk { position:absolute; top:-26px; width:0; height:0; transform:translateX(-50%); border-left:9px solid transparent; border-right:9px solid transparent; border-top:14px solid var(--fg); }
+.rng { position:absolute; top:-14px; height:10px; border:3px solid var(--fg); border-bottom:0; border-radius:6px 6px 0 0; }
+.lbls { display:flex; gap:4px; margin:0 6px; }
+.lbls span { flex:1; font-size:10.5px; color:var(--muted-fg); line-height:1.2; }
+.lbls span.on { color:var(--fg); font-weight:700; }
+.note { text-align:center; font-size:12.5px; color:var(--muted-fg); max-width:760px; margin:26px auto 0; line-height:1.5; }
+</style>
+</head>
+<body>
+<h1>Meal rating gauge</h1>
+<p class="sub">Two ways to show it, three sample cases each. Sample numbers only; nothing is connected yet.</p>
+
+<h2>Option A: dial (follows your reference)</h2>
+<div class="row" id="A"></div>
+<h2>Option B: simple scale (alternative)</h2>
+<div class="row" id="B"></div>
+
+<p class="note">Proposed rule: compare the carbs in your portion with a limit per meal (starting point 45 g, set by you and your care team). Up to 60% of the limit is Healthy, up to 100% OK, up to 150% Not recommended, above that Avoid. More than 25 g of sugars moves the result one step worse. When the estimate is uncertain the marker shows a range instead of one spot. The rating uses carbs and sugars only.</p>
+
+<script>
+const NAMES = ['Healthy', 'OK', 'Not recommended', 'Avoid'];
+const COLORS = ['var(--l0)', 'var(--l1)', 'var(--l2)', 'var(--l3)'];
+const LIMIT = 45;
+function pos(carbs, sugars) {            // 0..1 along the scale
+  const r = carbs / LIMIT;
+  let p = r <= .6 ? (r / .6) * .25 : r <= 1 ? .25 + ((r - .6) / .4) * .25 : r <= 1.5 ? .5 + ((r - 1) / .5) * .25 : Math.min(1, .75 + ((r - 1.5) / .75) * .25);
+  if (sugars > 25) p = Math.min(.999, p + .25);
+  return p;
+}
+const lvl = (p) => Math.min(3, Math.floor(p / .25));
+const cases = [
+  { title: 'Meal prep, 1 serving', portion: 'about 465 g', lo: 39, hi: 39, sugars: 11, conf: 'Medium confidence' },
+  { title: 'Chicken and olive pizza', portion: 'about 550 g', lo: 116, hi: 116, sugars: 10, conf: 'Medium confidence' },
+  { title: 'Baked pear with granola', portion: 'about 260 g', lo: 35, hi: 62, sugars: 24, conf: 'Low confidence: range shown' },
+];
+function dialSvg(p0, p1, big, unit) {
+  // 220-degree arc of four rounded segments (like the reference), ring marker on the arc, big number inside.
+  const cx = 150, cy = 130, r = 105, w = 20, start = 200, sweep = 220;
+  const ang = (p) => start - p * sweep;
+  const pt = (a, rad = r) => [cx + rad * Math.cos(a * Math.PI / 180), cy - rad * Math.sin(a * Math.PI / 180)];
+  const arc = (a0, a1, rad = r) => { const [x0, y0] = pt(a0, rad), [x1, y1] = pt(a1, rad); const large = Math.abs(a0 - a1) > 180 ? 1 : 0; return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${rad} ${rad} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
+  let sv = '';
+  for (let i = 0; i < 4; i++) sv += `<path d="${arc(ang(i * .25 + .012), ang((i + 1) * .25 - .012))}" stroke="${COLORS[i]}" stroke-width="${w}" fill="none" stroke-linecap="round"/>`;
+  if (p1 - p0 > .02) sv += `<path d="${arc(ang(p0), ang(p1), r + 20)}" stroke="#0F172A" stroke-width="4" fill="none" stroke-linecap="round" opacity=".75"/>`;
+  const [kx, ky] = pt(ang((p0 + p1) / 2));
+  sv += `<circle cx="${kx.toFixed(1)}" cy="${ky.toFixed(1)}" r="13" fill="#fff" stroke="#0F172A" stroke-width="5"/>`;
+  return `<div class="dial"><svg width="300" height="215" viewBox="0 0 300 215" role="img" aria-label="Rating dial">${sv}</svg><div class="center"><b>${big}</b><span>${unit}</span></div></div>`;
+}
+function barHtml(p0, p1) {
+  const left = (p) => `calc(6px + (100% - 12px) * ${p.toFixed(3)})`;
+  let h = '<div class="bar">' + COLORS.map((c) => `<i style="background:${c}"></i>`).join('');
+  if (p1 - p0 > .02) h += `<span class="rng" style="left:${left(p0)};width:calc((100% - 12px) * ${(p1 - p0).toFixed(3)})"></span>`;
+  else h += `<span class="mk" style="left:${left(p0)}"></span>`;
+  return h + '</div>';
+}
+function card(kind, c) {
+  const p0 = pos(c.lo, c.sugars), p1 = pos(c.hi, c.sugars), la = lvl(p0), lb = lvl(p1);
+  const word = la === lb ? NAMES[la] : `${NAMES[la]} to ${NAMES[lb]}`;
+  const cls = `l${lb}`;
+  const carbs = c.lo === c.hi ? `${c.lo}` : `${c.lo}–${c.hi}`;
+  const legend = '<div class="legend">' + NAMES.map((n, i) => `<span><i style="background:${COLORS[i]}"></i>${n}</span>`).join('') + '</div>';
+  const gauge = kind === 'A' ? dialSvg(p0, p1, carbs, 'g carbs') : barHtml(p0, p1) + '<div class="lbls">' + NAMES.map((n, i) => `<span class="${i >= la && i <= lb ? 'on' : ''}">${n}</span>`).join('') + '</div>';
+  const small = kind === 'A' ? `<div class="why">${c.sugars} g sugars · limit ${LIMIT} g per meal</div>` : `<div class="why">${carbs} g carbs · ${c.sugars} g sugars · limit ${LIMIT} g per meal</div>`;
+  return `<div class="card"><div class="t">${c.title}</div><div class="p">Portion: ${c.portion} · ${c.conf}</div>
+  <div class="panel"><div class="cap">Blood-sugar check</div>${gauge}
+  <div class="verdict ${cls}" style="margin-top:${kind === 'A' ? '-34px' : '14px'}">${word}</div>
+  ${kind === 'A' ? legend : ''}${small}
+  <div class="basis">Based on carbs and sugars only. Not medical advice.</div></div></div>`;
+}
+for (const k of ['A', 'B']) document.getElementById(k).innerHTML = cases.map((c) => card(k, c)).join('');
+</script>
+</body>
+</html>
