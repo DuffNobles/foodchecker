@@ -16,6 +16,7 @@ export default function Scan() {
   const [error, setError] = useState('');
   const [round, setRound] = useState(0);
   const [carry, setCarry] = useState(null); // typed values kept across a re-scan of the same photo
+  const [carryAdded, setCarryAdded] = useState(null); // foods added by hand, kept the same way
 
   async function run(p, hint) {
     setStage('working');
@@ -42,6 +43,7 @@ export default function Scan() {
       const p = await prepare(file);
       setPhoto(p);
       setCarry(null);
+      setCarryAdded(null);
       run(p, '');
     } catch {
       setError('I could not open that photo. Try another one.');
@@ -98,7 +100,7 @@ export default function Scan() {
         )}
 
         {stage === 'result' && data && photo && (
-          <ResultView key={round} data={data} photoUrl={photo.url} carry={carry} onRescan={(hint, kept) => { setCarry(kept); run(photo, hint); }} onAgain={() => { setData(null); setPhoto(null); setStage('idle'); }} />
+          <ResultView key={round} data={data} photoUrl={photo.url} carry={carry} carryAdded={carryAdded} onRescan={(hint, kept, keptAdded) => { setCarry(kept); setCarryAdded(keptAdded); run(photo, hint); }} onAgain={() => { setData(null); setPhoto(null); setStage('idle'); }} />
         )}
       </main>
     </>
