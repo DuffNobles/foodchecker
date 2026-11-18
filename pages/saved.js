@@ -13,6 +13,9 @@ const METRICS = [
   { key: 'protein', label: 'Protein', unit: 'g', cls: 'c4' },
 ];
 
+// Fiber only exists on results saved after it was added; older ones simply do not show the block.
+const ALL = [...METRICS, { key: 'fiber', label: 'Fiber (part of the carbs)', unit: 'g', cls: 'c5 wide' }];
+
 const when = (iso) => new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 
 // Photo from the phone's own storage, shown through a temporary local address.
@@ -82,7 +85,7 @@ function Detail({ r, onBack, onChange }) {
         </div>
       )}
       <div className="grid">
-        {METRICS.map((m) => {
+        {ALL.filter((m) => r.totals[m.key] !== undefined && !(menu && m.key === 'fiber')).map((m) => {
           const v = showValue(r.totals[m.key], menu ? 'medium' : r.confidence);
           const na = r.totals[m.key] == null;
           return (
