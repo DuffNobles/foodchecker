@@ -7,3 +7,6 @@ risk-test/results/
 .next/
 design/assets/
 design/references/
+
+.vercel
+.env*
