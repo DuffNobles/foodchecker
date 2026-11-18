@@ -152,3 +152,24 @@ h1.title { font: 700 22px/1.2 var(--head); margin: 16px 0 6px; }
 .ti svg { width: 24px; height: 24px; }
 .t1 .ti { background: var(--tint-prot); } .t2 .ti { background: var(--tint-carbs); } .t3 .ti { background: var(--tint-cal); }
 @media (prefers-reduced-motion: reduce) { .tipcards li { animation: none; } }
+
+/* Saved list */
+.keepphoto { display: flex; align-items: flex-start; gap: 12px; background: var(--card); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); font: 600 15px var(--head); cursor: pointer; min-height: 52px; }
+.keepphoto input { width: 22px; height: 22px; margin-top: 1px; accent-color: var(--primary); flex: none; }
+.keepphoto small { display: block; font: 400 12.5px/1.4 var(--body); color: var(--muted-fg); margin-top: 2px; }
+.linkbtn { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.btn.p.linkbtn { color: var(--on-primary); }
+.action.saved { background: var(--tint-cal); animation-delay: .24s; }
+.scard { display: flex; gap: 14px; align-items: center; width: 100%; text-align: left; border: 0; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px; margin-bottom: 12px; font-family: inherit; color: var(--fg); cursor: pointer; min-height: 88px; }
+.sthumb { flex: none; width: 72px; height: 72px; border-radius: 16px; overflow: hidden; background: var(--tint-prot); color: var(--primary); display: grid; place-items: center; }
+.sthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sbody { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sbody b { font: 700 16px/1.25 var(--head); }
+.sbody small { font-size: 12.5px; line-height: 1.35; color: var(--muted-fg); }
+.spill { align-self: flex-start; margin-top: 4px; padding: 3px 10px; border-radius: 999px; font: 600 12px var(--body); background: var(--muted); }
+.spill.l0 { color: var(--l0); } .spill.l1 { color: #3F8F57; } .spill.l2 { color: #9A5B06; } .spill.l3 { color: var(--l3); }
+.btn.danger { color: #92400E; border-color: #E9C98A; }
+.btn.danger.solid { background: #92400E; color: #fff; border-color: #92400E; }
+.askdel { background: #FEF6E7; border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 10px; }
+.askdel p { font: 600 15px/1.3 var(--head); }
+.askdel .btn { margin-top: 0; }
