@@ -29,10 +29,19 @@ function NumField({ short, label, value, onCommit }) {
   );
 }
 
-export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }) {
+export default function ResultView({ data, photoUrl, carry, onRescan, onSave, onAgain }) {
   const [grams, setGrams] = useState(() => Object.fromEntries(data.items.map((i) => [i.id, i.grams])));
   const [removed, setRemoved] = useState({});
-  const [edits, setEdits] = useState({}); // typed carbs/sugars per food, kept as grams-per-gram so they follow the portion
+  // typed carbs/sugars per food, kept as grams-per-gram so they follow the portion; a re-scan carries them over by food name
+  const [edits, setEdits] = useState(() => {
+    const start = {};
+    const f0 = data.scope === 'prep' && data.servings >= 2 ? 1 / data.servings : 1;
+    for (const i of data.items) {
+      const c = carry?.[i.name.toLowerCase()];
+      if (c && i.grams * f0 > 0) start[i.id] = Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v / (i.grams * f0)]));
+    }
+    return start;
+  });
   const prep = data.scope === 'prep' && data.servings >= 2;
   const MODES = prep ? { serving: 1 / data.servings, half: 0.5, all: 1 } : { half: 0.5, all: 1, more: 1.5 };
   const [mode, setMode] = useState(prep ? 'serving' : 'all');
@@ -82,6 +91,16 @@ export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }
     if (t.na) return null;
     if (data.confidence === 'low') return `${Math.round(t.value * 0.65)}–${Math.round(t.value * 1.35)}`;
     return String(Math.round(t.value));
+  }
+
+  function rescan(hint) {
+    const kept = {};
+    for (const i of active) {
+      if (!edits[i.id]) continue;
+      const g = (Number(grams[i.id]) || 0) * factor;
+      kept[i.name.toLowerCase()] = Object.fromEntries(Object.entries(edits[i.id]).map(([k, v]) => [k, v * g]));
+    }
+    onRescan(hint, kept);
   }
 
   function save() {
@@ -140,11 +159,11 @@ export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }
         <div className="ask">
           <p>{data.question.text}</p>
           <div className="chips">
-            {data.question.options.map((o) => <button key={o} type="button" className="chip" onClick={() => onRescan(o)}>{o}</button>)}
+            {data.question.options.map((o) => <button key={o} type="button" className="chip" onClick={() => rescan(o)}>{o}</button>)}
             <button type="button" className="chip" onClick={() => setShowOther(true)}>Other…</button>
           </div>
           {showOther && (
-            <form className="other" onSubmit={(e) => { e.preventDefault(); if (other.trim()) onRescan(other.trim()); }}>
+            <form className="other" onSubmit={(e) => { e.preventDefault(); if (other.trim()) rescan(other.trim()); }}>
               <input className="field" value={other} onChange={(e) => setOther(e.target.value)} placeholder="Tell me what it is" maxLength={120} aria-label="Tell me what it is" />
               <button className="btn" type="submit" disabled={!other.trim()}>Update</button>
             </form>
@@ -192,8 +211,8 @@ export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }
         {Object.keys(removed).length > 0 && (
           <>
             <button className="link" type="button" onClick={() => setRemoved({})}>Put removed items back</button>
-            <button className="btn s recheck" type="button" onClick={() => onRescan(`Only these foods are on the plate: ${active.map((i) => i.name).join(', ')}. Ignore anything else.`)}>Check the photo again with this list</button>
-            <p className="note-line">Reads the photo again. Values you typed are cleared.</p>
+            <button className="btn s recheck" type="button" onClick={() => rescan(`Only these foods are on the plate: ${active.map((i) => i.name).join(', ')}. Ignore anything else.`)}>Check the photo again with this list</button>
+            <p className="note-line">Reads the photo again. Values you typed are kept for foods that are still there.</p>
           </>
         )}
       </div>
