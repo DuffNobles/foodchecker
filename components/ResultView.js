@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Gauge from './Gauge';
 
 const METRICS = [
   { key: 'carbs', label: 'Total carbohydrates', unit: 'g', cls: 'c1' },
@@ -24,6 +25,17 @@ export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }
   const [other, setOther] = useState('');
   const [showOther, setShowOther] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [limit, setLimit] = useState(45);
+
+  useEffect(() => {
+    try { const v = Number(localStorage.getItem('fc_limit')); if (v >= 10 && v <= 200) setLimit(v); } catch { /* default */ }
+  }, []);
+
+  function changeLimit(raw) {
+    const v = Number(raw);
+    setLimit(raw === '' ? '' : v);
+    if (v >= 10 && v <= 200) { try { localStorage.setItem('fc_limit', String(v)); } catch { /* ignore */ } }
+  }
 
   const factor = MODES[mode];
   const active = data.items.filter((i) => !removed[i.id]);
@@ -93,6 +105,13 @@ export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }
         <div className={`dots ${data.confidence === 'low' ? 'low' : ''}`}>{[1, 2, 3].map((n) => <i key={n} className={n <= level ? 'on' : ''} />)}</div>
         <span><b>{confWord} confidence.</b> {HINT[data.confidence]}</span>
       </div>
+      <Gauge
+        carbs={totals.carbs.na ? null : totals.carbs.value}
+        sugars={totals.sugars.na ? null : totals.sugars.value}
+        limit={Number(limit) >= 10 ? Number(limit) : 45}
+        range={data.confidence === 'low' && !totals.carbs.na ? [totals.carbs.value * 0.65, totals.carbs.value * 1.35] : null}
+        onLimit={changeLimit}
+      />
       {data.note && <p className="note-line">{data.note}</p>}
 
       {needsAsk && (
