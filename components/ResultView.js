@@ -6,8 +6,7 @@ const METRICS = [
   { key: 'calories', label: 'Calories', unit: 'kcal', cls: 'c3' },
   { key: 'protein', label: 'Protein', unit: 'g', cls: 'c4' },
 ];
-const MODES = { half: 0.5, all: 1, more: 1.5 };
-const MODE_LABEL = { half: 'Half', all: 'All', more: 'More' };
+const MODE_LABEL = { serving: '1 serving', half: 'Half', all: 'All', more: 'More' };
 const LEVEL = { high: 3, medium: 2, low: 1 };
 const HINT = { high: 'Looks clear.', medium: 'Check the portion.', low: 'Missing data.' };
 
@@ -18,8 +17,10 @@ function Icon({ d, extra }) {
 export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }) {
   const [grams, setGrams] = useState(() => Object.fromEntries(data.items.map((i) => [i.id, i.grams])));
   const [removed, setRemoved] = useState({});
-  const [mode, setMode] = useState('all');
-  const [showPortion, setShowPortion] = useState(false);
+  const prep = data.scope === 'prep' && data.servings >= 2;
+  const MODES = prep ? { serving: 1 / data.servings, half: 0.5, all: 1 } : { half: 0.5, all: 1, more: 1.5 };
+  const [mode, setMode] = useState(prep ? 'serving' : 'all');
+  const [showPortion, setShowPortion] = useState(prep);
   const [other, setOther] = useState('');
   const [showOther, setShowOther] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -87,6 +88,7 @@ export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }
           ))}
         </div>
       )}
+      {prep && <p className="note-line">{mode === 'serving' ? `This looks like about ${data.servings} meals' worth. Showing 1 serving.` : mode === 'half' ? 'Showing half of everything in the photo.' : 'Showing everything in the photo.'}</p>}
       <div className="conf">
         <div className={`dots ${data.confidence === 'low' ? 'low' : ''}`}>{[1, 2, 3].map((n) => <i key={n} className={n <= level ? 'on' : ''} />)}</div>
         <span><b>{confWord} confidence.</b> {HINT[data.confidence]}</span>
@@ -125,15 +127,21 @@ export default function ResultView({ data, photoUrl, onRescan, onSave, onAgain }
 
       <div className="card">
         <h3>What I see</h3>
-        {data.items.map((i) => removed[i.id] ? null : (
-          <div className="row" key={i.id}>
-            <span className="n">{i.name}<small className="src">{i.usda_match ? 'USDA' : 'Estimate'}</small></span>
-            <label className="g-edit"><span className="sr">Grams of {i.name}</span>
-              <input type="number" inputMode="decimal" min="0" value={grams[i.id]} onChange={(e) => setGrams({ ...grams, [i.id]: e.target.value })} /> g
-            </label>
-            <button className="x" type="button" aria-label={`Remove ${i.name}`} onClick={() => setRemoved({ ...removed, [i.id]: true })}><Icon d="M6 6l12 12M18 6L6 18" /></button>
-          </div>
-        ))}
+        {data.items.map((i) => {
+          if (removed[i.id]) return null;
+          const g = (Number(grams[i.id]) || 0) * factor;
+          const kcal = i.per_g.calories == null ? null : Math.round(i.per_g.calories * g);
+          const carbs = i.per_g.carbs == null ? null : Math.round(i.per_g.carbs * g);
+          return (
+            <div className="row" key={i.id}>
+              <span className="n">{i.name}<small className="src">{i.usda_match ? 'USDA' : 'Estimate'} · {kcal == null ? 'no calories' : `${kcal} kcal`} · {carbs == null ? 'no carbs' : `${carbs} g carbs`}</small></span>
+              <label className="g-edit"><span className="sr">Grams of {i.name}</span>
+                <input type="number" inputMode="decimal" min="0" value={Math.round(g * 10) / 10} onChange={(e) => setGrams({ ...grams, [i.id]: e.target.value === '' ? '' : Number(e.target.value) / factor })} /> g
+              </label>
+              <button className="x" type="button" aria-label={`Remove ${i.name}`} onClick={() => setRemoved({ ...removed, [i.id]: true })}><Icon d="M6 6l12 12M18 6L6 18" /></button>
+            </div>
+          );
+        })}
         {Object.keys(removed).length > 0 && <button className="link" type="button" onClick={() => setRemoved({})}>Put removed items back</button>}
       </div>
 
