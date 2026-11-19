@@ -256,7 +256,7 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
           // the size the model saw, shown only while the grams still match the photo (otherwise it would be wrong)
           const measure = (i.added || factor === 1) && Math.round(Number(grams[i.id])) === Math.round(i.grams) && i.portion_text ? i.portion_text : null;
           return (
-            <div className="row" key={i.id}>
+            <div className="row food" key={i.id}>
               <div className="rtop">
                 <span className="n">{i.name}{measure && <small className="meas">{i.added ? 'You added' : 'Looks like'} {measure}</small>}<small className="src">{edited ? 'Edited by you' : i.usda_match ? `Matched to: ${shortName(i.usda_match)}` : 'My estimate'} · {kcal == null ? 'calories not available' : `${kcal} kcal`}</small></span>
                 <button className="x" type="button" aria-label={`Remove ${i.name}`} onClick={() => setRemoved({ ...removed, [i.id]: true })}><Icon d="M6 6l12 12M18 6L6 18" /></button>
