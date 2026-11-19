@@ -35,7 +35,7 @@ function Dish({ d, limit, saved, onSave }) {
         ))}
       </div>
       <p className="note-line">
-        Menu estimate{d.grams ? ` for about ${Math.round(d.grams)} g` : ''}{d.confidence === 'low' ? ', low confidence' : ''}.
+        Rough estimate for a typical serving{d.grams ? `, about ${Math.round(d.grams)} g` : ''}.{d.confidence === 'low' ? ' Not very sure about this one.' : ''}
         {missing.length > 0 && ` Not available: ${missing.join(', ')}.`}
         {!r && ' Not enough carb data to rate it.'}
       </p>
@@ -65,13 +65,13 @@ export default function Menu() {
       const res = await fetch('/api/menu', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: p.b64 }) });
       if (res.status === 401) { router.push('/unlock'); return; }
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || 'Something went wrong.');
+      if (!res.ok) throw new Error(body.error || 'Something went wrong. Please try again.');
       setData(body);
       setSaved({});
       setOrder('printed');
       setStage('result');
     } catch (e) {
-      setError(e.message || 'Something went wrong.');
+      setError(e.message || 'Something went wrong. Please try again.');
       setStage('error');
     }
   }
