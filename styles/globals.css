@@ -176,8 +176,8 @@ h1.title { font: 700 22px/1.2 var(--head); margin: 16px 0 6px; }
 /* Menu scan */
 .seg.two { grid-template-columns: 1fr 1fr; margin-bottom: 12px; }
 .dish { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px; margin-bottom: 12px; }
-.dtop { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.dname { min-width: 0; }
+.dtop { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 10px; }
+.dname { min-width: 0; flex: 1 1 150px; }
 .dname b { display: block; font: 700 16px/1.25 var(--head); }
 .dname small { display: block; font-size: 13px; line-height: 1.3; color: var(--muted-fg); margin-top: 2px; }
 .dtop .spill { flex: none; margin-top: 0; }

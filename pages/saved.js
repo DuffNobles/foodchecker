@@ -30,6 +30,9 @@ function usePhoto(id, has) {
   return url;
 }
 
+// Results saved before the scale was renamed keep their rating but show the current names.
+const rename = (w) => w.replace('Healthy', 'Best Choice').replace('OK', 'Good Option').replace('Not recommended', 'Not Recommended');
+
 function Card({ r, onOpen }) {
   const url = usePhoto(r.id, r.hasPhoto);
   const t = r.totals;
@@ -42,7 +45,7 @@ function Card({ r, onOpen }) {
         {r.subtitle && <small>{r.subtitle}</small>}
         <small>{when(r.savedAt)}{r.source === 'menu' ? ' · Menu' : ''}</small>
         <small>{showValue(t.carbs, conf)} g carbs · {showValue(t.sugars, conf)} g sugars · {showValue(t.calories, conf)} kcal · {showValue(t.protein, conf)} g protein</small>
-        {r.verdict && <span className={`spill l${r.verdict.level}`}>{r.verdict.word}</span>}
+        {r.verdict && <span className={`spill l${r.verdict.level}`}>{rename(r.verdict.word)}</span>}
       </span>
     </button>
   );
@@ -79,8 +82,8 @@ function Detail({ r, onBack, onChange }) {
       {r.verdict && (
         <div className="gauge">
           <div className="gcap">Blood-sugar check</div>
-          <div className={`gverdict l${r.verdict.level}`}>{r.verdict.word}</div>
-          <div className="gbasis">Rated against a limit of {r.limit} g carbs per meal on the day it was saved. Based on carbs and sugars only. Not medical advice.</div>
+          <div className={`gverdict l${r.verdict.level}`}>{rename(r.verdict.word)}</div>
+          <div className="gbasis">Rated against your {r.limit} g carb limit on the day you saved it. Carbs and sugars only. Not medical advice.</div>
           {r.aiEstimate && <div className="gbasis">Some numbers were AI estimates.</div>}
         </div>
       )}
@@ -114,7 +117,7 @@ function Detail({ r, onBack, onChange }) {
             </div>
           )}
       </div>
-      <p className="legal">This is an estimate. It is not medical advice and does not replace your care team.<br /><b>Source:</b> USDA FoodData Central where marked.</p>
+      <p className="legal">This is an estimate. It is not medical advice and does not replace your care team.<br /><b>Source:</b> USDA FoodData Central, the US government's food database, where marked.</p>
     </>
   );
 }

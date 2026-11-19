@@ -1,5 +1,5 @@
 // Blood-sugar check: a fixed rule on the carbs (and sugars) of the portion, not a model opinion.
-const NAMES = ['Healthy', 'OK', 'Not recommended', 'Avoid'];
+const NAMES = ['Best Choice', 'Good Option', 'Not Recommended', 'Avoid'];
 const COLORS = ['var(--l0)', 'var(--l1)', 'var(--l2)', 'var(--l3)'];
 
 export function position(carbs, sugars, limit) {
@@ -47,12 +47,12 @@ export default function Gauge({ carbs, sugars, limit, range, aiEstimate, onLimit
       </div>
       <div className={`gverdict l${lb}`}>{word}</div>
       <div className="gwhy">{carbText}{sugarText}</div>
-      <label className="glimit">Limit per meal
+      <label className="glimit">Carb limit per meal
         <input type="number" inputMode="decimal" min="10" max="200" value={limit} onChange={(e) => onLimit(e.target.value)} aria-label="Carb limit per meal in grams" /> g
       </label>
-      {(a.moved || b.moved) && <div className="gbasis">Sugars over 25 g move this one step worse.</div>}
+      {(a.moved || b.moved) && <div className="gbasis">Sugars are over 25 g, so the rating is one step stricter.</div>}
       {aiEstimate && <div className="gbasis">Some numbers are AI estimates. Check them.</div>}
-      <div className="gbasis">Based on carbs and sugars only. Set the limit with your care team. Not medical advice.</div>
+      <div className="gbasis">This looks only at carbs and sugars. Ask your care team what limit is right for you. Not medical advice.</div>
     </div>
   );
 }

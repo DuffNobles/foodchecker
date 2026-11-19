@@ -25,12 +25,12 @@ export default function Scan() {
       const res = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: p.b64, hint }) });
       if (res.status === 401) { router.push('/unlock'); return; }
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error || 'Something went wrong.');
+      if (!res.ok) throw new Error(body.error || 'Something went wrong. Please try again.');
       setData(body);
       setRound((n) => n + 1);
       setStage('result');
     } catch (e) {
-      setError(e.message || 'Something went wrong.');
+      setError(e.message || 'Something went wrong. Please try again.');
       setStage('error');
     }
   }

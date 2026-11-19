@@ -13,7 +13,10 @@ const METRICS = [
 const ALL = [...METRICS, { key: 'fiber', label: 'Fiber (part of the carbs)', unit: 'g', cls: 'c5 wide' }];
 const MODE_LABEL = { serving: '1 serving', half: 'Half', all: 'All', more: 'More' };
 const LEVEL = { high: 3, medium: 2, low: 1 };
-const HINT = { high: 'Looks clear.', medium: 'Check the portion.', low: 'Missing data.' };
+const CONF = { high: ['Pretty sure.', 'The photo was clear.'], medium: ['Fairly sure.', 'Check the portion size.'], low: ['Not very sure.', 'Some details were hard to see.'] };
+
+// USDA names are long ("Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained solids"): drop the brackets, keep the first three parts.
+const shortName = (name) => name.replace(/\([^)]*\)/g, '').split(',').map((s) => s.trim()).filter(Boolean).slice(0, 3).join(', ');
 
 function Icon({ d, extra }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} />{extra}</svg>;
@@ -98,7 +101,8 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
       if (edits[i.id]?.[key] != null) you += 1; else if (i.from_usda[key]) usda += 1; else est += 1;
     }
     const na = totalG <= 0 || nullG / totalG > 0.3;
-    const source = [usda && 'USDA', est && 'Estimate', you && 'Your value'].filter(Boolean).join(' + ') || 'USDA';
+    const parts = [usda && 'USDA', est && 'my estimate', you && 'your value'].filter(Boolean).join(' + ') || 'USDA';
+    const source = parts[0].toUpperCase() + parts.slice(1);
     return [key, { value: sum, na, source }];
   }));
 
@@ -177,7 +181,6 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
 
   const level = LEVEL[data.confidence] || 2;
   const needsAsk = data.confidence === 'low' && data.question;
-  const confWord = data.confidence[0].toUpperCase() + data.confidence.slice(1);
 
   return (
     <>
@@ -199,7 +202,7 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
       {prep && <p className="note-line">{mode === 'serving' ? `This looks like about ${data.servings} meals' worth. Showing 1 serving.` : mode === 'half' ? 'Showing half of everything in the photo.' : 'Showing everything in the photo.'}</p>}
       <div className="conf">
         <div className={`dots ${data.confidence === 'low' ? 'low' : ''}`}>{[1, 2, 3].map((n) => <i key={n} className={n <= level ? 'on' : ''} />)}</div>
-        <span><b>{confWord} confidence.</b> {HINT[data.confidence]}</span>
+        <span><b>{CONF[data.confidence][0]}</b> {CONF[data.confidence][1]}</span>
       </div>
       <Gauge
         carbs={totals.carbs.na ? null : totals.carbs.value}
@@ -235,7 +238,7 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
             <div key={m.key} className={`metric ${m.cls}`}>
               <small>{m.label}</small>
               {v == null ? <b className="na">Not available</b> : <b className={v.includes('–') ? 'rng' : ''}>{v}<span>{m.unit}</span></b>}
-              <em>{v == null ? 'Not enough data' : data.confidence === 'low' ? `Estimated range · ${t.source}` : m.key === 'fiber' ? t.source : `${t.source} · ${Math.round(totalG)} g portion`}</em>
+              <em>{v == null ? 'Not enough information' : data.confidence === 'low' ? `Rough range · ${t.source}` : m.key === 'fiber' ? t.source : `${t.source} · ${Math.round(totalG)} g portion`}</em>
             </div>
           );
         })}
@@ -255,7 +258,7 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
           return (
             <div className="row" key={i.id}>
               <div className="rtop">
-                <span className="n">{i.name}{measure && <small className="meas">{i.added ? 'You added' : 'Looks like'} {measure}</small>}<small className="src">{edited ? 'Edited by you' : i.usda_match ? `USDA: ${i.usda_match}` : 'Estimate'} · {kcal == null ? 'no calories' : `${kcal} kcal`}</small></span>
+                <span className="n">{i.name}{measure && <small className="meas">{i.added ? 'You added' : 'Looks like'} {measure}</small>}<small className="src">{edited ? 'Edited by you' : i.usda_match ? `Matched to: ${shortName(i.usda_match)}` : 'My estimate'} · {kcal == null ? 'calories not available' : `${kcal} kcal`}</small></span>
                 <button className="x" type="button" aria-label={`Remove ${i.name}`} onClick={() => setRemoved({ ...removed, [i.id]: true })}><Icon d="M6 6l12 12M18 6L6 18" /></button>
               </div>
               <div className="fields">
@@ -283,8 +286,8 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
         )}
         {Object.keys(removed).length > 0 && (
           <>
-            <button className="link" type="button" onClick={() => setRemoved({})}>Put removed items back</button>
-            <button className="btn s recheck" type="button" onClick={() => rescan(`Only these foods are on the plate: ${active.map((i) => i.name).join(', ')}. Ignore anything else.`)}>Check the photo again with this list</button>
+            <button className="link" type="button" onClick={() => setRemoved({})}>Put removed foods back</button>
+            <button className="btn s recheck" type="button" onClick={() => rescan(`Only these foods are on the plate: ${active.map((i) => i.name).join(', ')}. Ignore anything else.`)}>Look at the photo again, using only these foods</button>
             <p className="note-line">Reads the photo again. Values you typed are kept for foods that are still there.</p>
           </>
         )}
@@ -302,7 +305,7 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
         {photoFailed && <p className="err" role="alert">The result is saved, but the photo could not be.</p>}
         <button className="btn s" type="button" onClick={onAgain}>Scan something else</button>
       </div>
-      <p className="legal">This is an estimate made from your photo. It is not medical advice and does not replace your care team.<br /><b>Source:</b> USDA FoodData Central where marked.</p>
+      <p className="legal">This is an estimate made from your photo. It is not medical advice and does not replace your care team.<br /><b>Source:</b> USDA FoodData Central, the US government's food database, where marked.</p>
     </>
   );
 }
