@@ -206,3 +206,7 @@ h1.title { font: 700 22px/1.2 var(--head); margin: 16px 0 6px; }
 .addform .err { margin-top: 0; }
 .addbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .addbtns .btn { margin-top: 0; }
+
+/* Foods in "What I see": a food's name, description and number boxes stay together, with clear space before the next food */
+.row.food { padding: 20px 0; gap: 8px; }
+.row.food:first-of-type { padding-top: 10px; }
