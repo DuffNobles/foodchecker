@@ -33,9 +33,16 @@ function NumField({ short, label, value, onCommit }) {
   );
 }
 
-export default function ResultView({ data, photoUrl, carry, onRescan, onAgain }) {
-  const [grams, setGrams] = useState(() => Object.fromEntries(data.items.map((i) => [i.id, i.grams])));
+export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan, onAgain }) {
+  const [grams, setGrams] = useState(() => Object.fromEntries([...data.items, ...(carryAdded || [])].map((i) => [i.id, i.grams])));
   const [removed, setRemoved] = useState({});
+  // foods typed in by hand ("Add a food"); a re-scan keeps them
+  const [added, setAdded] = useState(carryAdded || []);
+  const items = [...data.items, ...added];
+  const [adding, setAdding] = useState(false);
+  const [addText, setAddText] = useState('');
+  const [addBusy, setAddBusy] = useState(false);
+  const [addErr, setAddErr] = useState('');
   // typed carbs/sugars per food, kept as grams-per-gram so they follow the portion; a re-scan carries them over by food name
   const [edits, setEdits] = useState(() => {
     const start = {};
@@ -44,6 +51,7 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onAgain })
       const c = carry?.[i.name.toLowerCase()];
       if (c && i.grams * f0 > 0) start[i.id] = Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v / (i.grams * f0)]));
     }
+    for (const i of carryAdded || []) if (i.edits) start[i.id] = i.edits;
     return start;
   });
   const prep = data.scope === 'prep' && data.servings >= 2;
@@ -68,20 +76,22 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onAgain })
   }
 
   const factor = MODES[mode];
-  const active = data.items.filter((i) => !removed[i.id]);
-  const totalG = active.reduce((s, i) => s + (Number(grams[i.id]) || 0) * factor, 0);
+  // grams actually eaten: photo foods follow the portion setting, foods you typed in are exactly what you typed
+  const gOf = (i) => (Number(grams[i.id]) || 0) * (i.added ? 1 : factor);
+  const active = items.filter((i) => !removed[i.id]);
+  const totalG = active.reduce((s, i) => s + gOf(i), 0);
 
   const perG = (i, key) => edits[i.id]?.[key] ?? i.per_g[key];
 
   function setValue(i, key, value) {
-    const g = (Number(grams[i.id]) || 0) * factor;
+    const g = gOf(i);
     if (g > 0) setEdits((e) => ({ ...e, [i.id]: { ...e[i.id], [key]: value / g } }));
   }
 
   const totals = Object.fromEntries(ALL.map(({ key }) => {
     let sum = 0, nullG = 0, usda = 0, est = 0, you = 0;
     for (const i of active) {
-      const g = (Number(grams[i.id]) || 0) * factor;
+      const g = gOf(i);
       const v = perG(i, key);
       if (v == null) { nullG += g; continue; }
       sum += v * g;
@@ -105,11 +115,35 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onAgain })
   function rescan(hint) {
     const kept = {};
     for (const i of active) {
-      if (!edits[i.id]) continue;
-      const g = (Number(grams[i.id]) || 0) * factor;
+      if (!edits[i.id] || i.added) continue;
+      const g = gOf(i);
       kept[i.name.toLowerCase()] = Object.fromEntries(Object.entries(edits[i.id]).map(([k, v]) => [k, v * g]));
     }
-    onRescan(hint, kept);
+    const keptAdded = active.filter((i) => i.added).map((i) => ({ ...i, grams: gOf(i), edits: edits[i.id] }));
+    onRescan(hint, kept, keptAdded);
+  }
+
+  async function addFood(e) {
+    e.preventDefault();
+    const text = addText.trim();
+    if (text.length < 2 || addBusy) return;
+    setAddBusy(true);
+    setAddErr('');
+    try {
+      const res = await fetch('/api/food', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+      if (res.status === 401) { window.location.href = '/unlock'; return; }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'I could not look that up.');
+      const id = Math.max(999, ...added.map((a) => a.id)) + 1;
+      setAdded((a) => [...a, { ...body.item, id, added: true }]);
+      setGrams((g) => ({ ...g, [id]: body.item.grams }));
+      setAddText('');
+      setAdding(false);
+    } catch (err) {
+      setAddErr(err.message || 'I could not look that up.');
+    } finally {
+      setAddBusy(false);
+    }
   }
 
   async function save() {
@@ -119,7 +153,7 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onAgain })
     const r = carbsKnown ? rate(totals.carbs.value, totals.sugars.na ? null : totals.sugars.value, lim, data.confidence === 'low') : null;
     const record = {
       id: Date.now(), savedAt: new Date().toISOString(), title: data.title, confidence: data.confidence, mode,
-      items: active.map((i) => ({ name: i.name, grams: Math.round((Number(grams[i.id]) || 0) * factor) })),
+      items: active.map((i) => ({ name: i.name, grams: Math.round(gOf(i)) })),
       totals: Object.fromEntries(ALL.map(({ key }) => [key, totals[key].na ? null : Math.round(totals[key].value)])),
       verdict: r ? { word: r.word, level: r.lb } : null, limit: lim, aiEstimate, hasPhoto: false,
     };
@@ -209,29 +243,44 @@ export default function ResultView({ data, photoUrl, carry, onRescan, onAgain })
 
       <div className="card">
         <h3>What I see</h3>
-        {data.items.map((i) => {
+        {items.map((i) => {
           if (removed[i.id]) return null;
-          const g = (Number(grams[i.id]) || 0) * factor;
+          const g = gOf(i);
           const kcal = perG(i, 'calories') == null ? null : Math.round(perG(i, 'calories') * g);
           const carbs = perG(i, 'carbs') == null ? null : perG(i, 'carbs') * g;
           const sugars = perG(i, 'sugars') == null ? null : perG(i, 'sugars') * g;
           const edited = !!edits[i.id];
           // the size the model saw, shown only while the grams still match the photo (otherwise it would be wrong)
-          const measure = factor === 1 && Math.round(Number(grams[i.id])) === Math.round(i.grams) && i.portion_text ? i.portion_text : null;
+          const measure = (i.added || factor === 1) && Math.round(Number(grams[i.id])) === Math.round(i.grams) && i.portion_text ? i.portion_text : null;
           return (
             <div className="row" key={i.id}>
               <div className="rtop">
-                <span className="n">{i.name}{measure && <small className="meas">Looks like {measure}</small>}<small className="src">{edited ? 'Edited by you' : i.usda_match ? `USDA: ${i.usda_match}` : 'Estimate'} · {kcal == null ? 'no calories' : `${kcal} kcal`}</small></span>
+                <span className="n">{i.name}{measure && <small className="meas">{i.added ? 'You added' : 'Looks like'} {measure}</small>}<small className="src">{edited ? 'Edited by you' : i.usda_match ? `USDA: ${i.usda_match}` : 'Estimate'} · {kcal == null ? 'no calories' : `${kcal} kcal`}</small></span>
                 <button className="x" type="button" aria-label={`Remove ${i.name}`} onClick={() => setRemoved({ ...removed, [i.id]: true })}><Icon d="M6 6l12 12M18 6L6 18" /></button>
               </div>
               <div className="fields">
-                <NumField short="Grams" label={`Grams of ${i.name}`} value={g} onCommit={(v) => setGrams({ ...grams, [i.id]: v / factor })} />
+                <NumField short="Grams" label={`Grams of ${i.name}`} value={g} onCommit={(v) => setGrams({ ...grams, [i.id]: v / (i.added ? 1 : factor) })} />
                 <NumField short="Carbs (g)" label={`Carbs in ${i.name}, g`} value={carbs} onCommit={(v) => setValue(i, 'carbs', v)} />
                 <NumField short="Sugars (g)" label={`Sugars in ${i.name}, g`} value={sugars} onCommit={(v) => setValue(i, 'sugars', v)} />
               </div>
             </div>
           );
         })}
+        {!adding ? (
+          <button className="link addfood" type="button" onClick={() => setAdding(true)}>
+            <Icon d="M12 5v14M5 12h14" />Add a food
+          </button>
+        ) : (
+          <form className="addform" onSubmit={addFood}>
+            <label htmlFor="addfood">What did you add?</label>
+            <input id="addfood" className="field" value={addText} onChange={(e) => setAddText(e.target.value)} placeholder="For example: 1 tbsp olive oil" maxLength={120} autoFocus />
+            {addErr && <p className="err" role="alert">{addErr}</p>}
+            <div className="addbtns">
+              <button className="btn" type="submit" disabled={addBusy || addText.trim().length < 2}>{addBusy ? 'Looking it up…' : 'Add'}</button>
+              <button className="btn s" type="button" onClick={() => { setAdding(false); setAddErr(''); }}>Cancel</button>
+            </div>
+          </form>
+        )}
         {Object.keys(removed).length > 0 && (
           <>
             <button className="link" type="button" onClick={() => setRemoved({})}>Put removed items back</button>
