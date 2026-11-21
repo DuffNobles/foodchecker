@@ -39,7 +39,7 @@ function Card({ r, onOpen }) {
   const conf = r.source === 'menu' ? 'medium' : r.confidence; // menu values are always single rough numbers
   return (
     <button type="button" className="scard" onClick={() => onOpen(r.id)}>
-      <span className="sthumb">{url ? <img src={url} alt="" /> : <svg viewBox="0 0 24 24"><path d="M3 11h18" /><path d="M5 11a7 7 0 0014 0" /></svg>}</span>
+      <span className="sthumb">{url ? <img src={url} alt="" /> : <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 11h18" /><path d="M5 11a7 7 0 0014 0" /></svg>}</span>
       <span className="sbody">
         <b>{r.title}</b>
         {r.subtitle && <small>{r.subtitle}</small>}
@@ -71,7 +71,7 @@ function Detail({ r, onBack, onChange }) {
   return (
     <>
       <div className="bar">
-        <button type="button" className="round" aria-label="Back to saved results" onClick={onBack}><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg></button>
+        <button type="button" className="round" aria-label="Back to saved results" onClick={onBack}><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg></button>
         <h2>Saved result</h2>
         <span className="round ghost" />
       </div>
@@ -82,7 +82,7 @@ function Detail({ r, onBack, onChange }) {
       {r.verdict && (
         <div className="gauge">
           <div className="gcap">Blood-sugar check</div>
-          <div className={`gverdict l${r.verdict.level}`}>{rename(r.verdict.word)}</div>
+          <div className={`gverdict ${r.verdict.word.includes(' to ') ? 'rng' : `l${r.verdict.level}`}`}>{rename(r.verdict.word)}</div>
           <div className="gbasis">Rated against your {r.limit} g carb limit on the day you saved it. Carbs and sugars only. Not medical advice.</div>
           {r.aiEstimate && <div className="gbasis">Some numbers were AI estimates.</div>}
         </div>
@@ -101,7 +101,7 @@ function Detail({ r, onBack, onChange }) {
       </div>
       {!menu && (
         <div className="card">
-          <h3>What was in it</h3>
+          <h2>What was in it</h2>
           {r.items.map((i, n) => <div className="row" key={n}><span className="n">{i.name}<small className="src">{i.grams} g</small></span></div>)}
         </div>
       )}
@@ -140,7 +140,7 @@ export default function Saved() {
         {current ? <Detail r={current} onBack={() => setOpen(null)} onChange={refresh} /> : (
           <>
             <div className="bar">
-              <Link href="/" className="round" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg></Link>
+              <Link href="/" className="round" aria-label="Back"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg></Link>
               <h2>Saved results</h2>
               <span className="round ghost" />
             </div>

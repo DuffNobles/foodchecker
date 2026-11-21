@@ -45,14 +45,16 @@ export default function Gauge({ carbs, sugars, limit, range, aiEstimate, onLimit
       <div className="glbls">
         {NAMES.map((n, i) => <span key={n} className={i >= la && i <= lb ? 'on' : ''}>{n}</span>)}
       </div>
-      <div className={`gverdict l${lb}`}>{word}</div>
+      <div className={`gverdict ${la === lb ? `l${lb}` : 'rng'}`} aria-live="polite">{word}</div>
       <div className="gwhy">{carbText}{sugarText}</div>
       <label className="glimit">Carb limit per meal
         <input type="number" inputMode="decimal" min="10" max="200" value={limit} onChange={(e) => onLimit(e.target.value)} aria-label="Carb limit per meal in grams" /> g
       </label>
-      {(a.moved || b.moved) && <div className="gbasis">Sugars are over 25 g, so the rating is one step stricter.</div>}
-      {aiEstimate && <div className="gbasis">Some numbers are AI estimates. Check them.</div>}
-      <div className="gbasis">This looks only at carbs and sugars. Ask your care team what limit is right for you. Not medical advice.</div>
+      <div className="gsafe">
+        {(a.moved || b.moved) && <div className="gbasis">Sugars are over 25 g, so the rating is one step stricter.</div>}
+        {aiEstimate && <div className="gbasis">Some numbers are AI estimates. Check them.</div>}
+        <div className="gbasis">This looks only at carbs and sugars. Ask your care team what limit is right for you. Not medical advice.</div>
+      </div>
     </div>
   );
 }

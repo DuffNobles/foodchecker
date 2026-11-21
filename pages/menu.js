@@ -35,7 +35,7 @@ function Dish({ d, limit, saved, onSave }) {
         ))}
       </div>
       <p className="note-line">
-        Rough estimate for a typical serving{d.grams ? `, about ${Math.round(d.grams)} g` : ''}.{d.confidence === 'low' ? ' Not very sure about this one.' : ''}
+        Rough estimate for a typical serving{d.grams ? `, about ${Math.round(d.grams)}\u00A0g` : ''}.{d.confidence === 'low' ? ' Not very sure about this one.' : ''}
         {missing.length > 0 && ` Not available: ${missing.join(', ')}.`}
         {!r && ' Not enough carb data to rate it.'}
       </p>
@@ -117,7 +117,7 @@ export default function Menu() {
       </Head>
       <main className="wrap">
         <div className="bar">
-          <Link href="/" className="round" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg></Link>
+          <Link href="/" className="round" aria-label="Back"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg></Link>
           <h2>Scan a menu</h2>
           <span className="round ghost" />
         </div>
@@ -125,19 +125,19 @@ export default function Menu() {
         {stage === 'idle' && (
           <>
             <section className="hero scanhero">
-              <span className="lens"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h12v18H6a2 2 0 01-2-2z" /><path d="M8 8h6M8 12h6" /></svg></span>
+              <span className="lens"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5a2 2 0 012-2h12v18H6a2 2 0 01-2-2z" /><path d="M8 8h6M8 12h6" /></svg></span>
               <h1>Take a photo of the <em>menu</em></h1>
               <p className="lead">Or choose one from your photos.</p>
             </section>
             <label className="action snap" htmlFor="photo">
-              <span className="ico"><svg viewBox="0 0 24 24"><path d="M4 8a2 2 0 012-2h2l1.5-2h5L16 6h2a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2z" /><circle cx="12" cy="12.5" r="3.6" /></svg></span>
+              <span className="ico"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 8a2 2 0 012-2h2l1.5-2h5L16 6h2a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2z" /><circle cx="12" cy="12.5" r="3.6" /></svg></span>
               <div><b>Take or choose a photo</b><p className="sub">Camera, photo library or files</p></div>
             </label>
             <input id="photo" className="file" type="file" accept="image/*" onChange={onFile} />
             <ul className="tipcards">
-              <li className="t1"><span className="ti"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /></svg></span>One page at a time, with the whole page in the picture.</li>
-              <li className="t2"><span className="ti"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.8" /><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" /></svg></span>Hold the phone straight on, in good light.</li>
-              <li className="t3"><span className="ti"><svg viewBox="0 0 24 24"><path d="M3.5 9h17v6h-17z" /><path d="M7.5 9v2.5M11 9v3.5M14.5 9v2.5M18 9v3.5" /></svg></span>Spanish menus work. Names stay as printed.</li>
+              <li className="t1"><span className="ti"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /></svg></span>One page at a time, with the whole page in the picture.</li>
+              <li className="t2"><span className="ti"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.8" /><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" /></svg></span>Hold the phone straight on, in good light.</li>
+              <li className="t3"><span className="ti"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3.5 9h17v6h-17z" /><path d="M7.5 9v2.5M11 9v3.5M14.5 9v2.5M18 9v3.5" /></svg></span>Spanish menus work. Names stay as printed.</li>
             </ul>
           </>
         )}
