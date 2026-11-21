@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { requireAccess } from '../lib/session';
 import { prepare } from '../lib/photo';
-import { rate } from '../components/Gauge';
+import { rate, VerdictLabel } from '../components/Gauge';
 import { addSaved, keepStorage } from '../lib/store';
 
 export const getServerSideProps = requireAccess;
@@ -24,7 +24,7 @@ function Dish({ d, limit, saved, onSave }) {
     <div className="dish">
       <div className="dtop">
         <div className="dname"><b>{d.name}</b>{d.name_en && <small>{d.name_en}</small>}</div>
-        {r && <span className={`spill l${r.lb}`}>{r.word}</span>}
+        {r && <span className={`spill l${r.lb}`}><VerdictLabel word={r.word} /></span>}
       </div>
       <div className="dvals">
         {COLS.map((c) => (

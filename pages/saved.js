@@ -2,6 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { requireAccess } from '../lib/session';
+import { VerdictLabel } from '../components/Gauge';
 import { getSaved, removeSaved, updateSaved, getPhoto, deletePhoto, showValue } from '../lib/store';
 
 export const getServerSideProps = requireAccess;
@@ -45,7 +46,7 @@ function Card({ r, onOpen }) {
         {r.subtitle && <small>{r.subtitle}</small>}
         <small>{when(r.savedAt)}{r.source === 'menu' ? ' · Menu' : ''}</small>
         <small>{showValue(t.carbs, conf)} g carbs · {showValue(t.sugars, conf)} g sugars · {showValue(t.calories, conf)} kcal · {showValue(t.protein, conf)} g protein</small>
-        {r.verdict && <span className={`spill l${r.verdict.level}`}>{rename(r.verdict.word)}</span>}
+        {r.verdict && <span className={`spill l${r.verdict.level}`}><VerdictLabel word={rename(r.verdict.word)} /></span>}
       </span>
     </button>
   );
@@ -82,7 +83,7 @@ function Detail({ r, onBack, onChange }) {
       {r.verdict && (
         <div className="gauge">
           <div className="gcap">Blood-sugar check</div>
-          <div className={`gverdict ${r.verdict.word.includes(' to ') ? 'rng' : `l${r.verdict.level}`}`}>{rename(r.verdict.word)}</div>
+          <div className={`gverdict ${r.verdict.word.includes(' to ') ? 'rng' : `l${r.verdict.level}`}`}><VerdictLabel word={rename(r.verdict.word)} /></div>
           <div className="gbasis">Rated against your {r.limit} g carb limit on the day you saved it. Carbs and sugars only. Not medical advice.</div>
           {r.aiEstimate && <div className="gbasis">Some numbers were AI estimates.</div>}
         </div>

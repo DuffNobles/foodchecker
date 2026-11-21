@@ -176,6 +176,13 @@ h1.title { font: 700 22px/1.2 var(--head); margin: 16px 0 6px; }
 .sbody small { font-size: 13.5px; line-height: 1.35; color: var(--muted-fg); }
 .spill { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 4px 12px 4px 10px; border-radius: 999px; font: 600 13.5px var(--body); background: var(--muted); }
 .spill::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+/* Range rating: "Range:" over "Good Option / Avoid" */
+.vstack { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; line-height: 1.25; }
+.vrng { font-weight: 500; }
+.gverdict .vstack { align-items: center; gap: 4px; }
+.gverdict .vrng { font: 600 15px var(--head); color: var(--muted-fg); }
+.spill:has(.vstack) { border-radius: 14px; align-items: flex-start; padding-top: 6px; padding-bottom: 6px; }
+.spill:has(.vstack)::before { margin-top: 6px; }
 .spill.l0 { color: var(--l0); } .spill.l1 { color: #2E7D46; } .spill.l2 { color: #9A5B06; } .spill.l3 { color: var(--l3); }
 .btn.danger { color: #92400E; border-color: #E9C98A; }
 .btn.danger.solid { background: #92400E; color: #fff; border-color: #92400E; }
