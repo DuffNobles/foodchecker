@@ -41,7 +41,9 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
   const [removed, setRemoved] = useState({});
   // foods typed in by hand ("Add a food"); a re-scan keeps them
   const [added, setAdded] = useState(carryAdded || []);
-  const items = [...data.items, ...added];
+  // most carbs first, by the photo's own reading so rows don't move while values are typed; foods you add stay at the end
+  const [photoItems] = useState(() => [...data.items].sort((a, b) => (b.per_g.carbs ?? -1) * b.grams - (a.per_g.carbs ?? -1) * a.grams));
+  const items = [...photoItems, ...added];
   const [adding, setAdding] = useState(false);
   const [addText, setAddText] = useState('');
   const [addBusy, setAddBusy] = useState(false);
@@ -204,16 +206,6 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
         <div className={`dots ${data.confidence === 'low' ? 'low' : ''}`}>{[1, 2, 3].map((n) => <i key={n} className={n <= level ? 'on' : ''} />)}</div>
         <span><b>{CONF[data.confidence][0]}</b> {CONF[data.confidence][1]}</span>
       </div>
-      <Gauge
-        carbs={totals.carbs.na ? null : totals.carbs.value}
-        sugars={totals.sugars.na ? null : totals.sugars.value}
-        limit={Number(limit) >= 10 ? Number(limit) : 45}
-        range={data.confidence === 'low'}
-        aiEstimate={aiEstimate}
-        onLimit={changeLimit}
-      />
-      {data.note && <p className="note-line">{data.note}</p>}
-
       {needsAsk && (
         <div className="ask">
           <p>{data.question.text}</p>
@@ -230,6 +222,16 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
         </div>
       )}
 
+      <Gauge
+        carbs={totals.carbs.na ? null : totals.carbs.value}
+        sugars={totals.sugars.na ? null : totals.sugars.value}
+        limit={Number(limit) >= 10 ? Number(limit) : 45}
+        range={data.confidence === 'low'}
+        aiEstimate={aiEstimate}
+        onLimit={changeLimit}
+      />
+      {data.note && <p className="note-line">{data.note}</p>}
+
       <div className="grid">
         {ALL.map((m) => {
           const t = totals[m.key];
@@ -245,7 +247,7 @@ export default function ResultView({ data, photoUrl, carry, carryAdded, onRescan
       </div>
 
       <div className="card">
-        <h3>What I see</h3>
+        <h2>What I see</h2>
         {items.map((i) => {
           if (removed[i.id]) return null;
           const g = gOf(i);
